@@ -25,6 +25,9 @@
 
 pragma solidity ^0.8.18;
 
+import {DecentralizedStableCoin} from "DecentralizedStableCoin.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+
 /*
  * @title DSCEngine
  * @author Nife Esleman
@@ -44,6 +47,13 @@ pragma solidity ^0.8.18;
  * for minting and redeeming DSC, as well as depositing and withdrawing collateral.
  * @notice This contract is based on the MakerDAO DSS system
  */
+/////////////////////////
+//   State Variables   //
+/////////////////////////
+
+mapping(address token => address priceFeed) private s_priceFeeds;
+DecentralizedStableCoin private immutable i_dsc;
+mapping(address user => mapping(address token => uint256 amount)) private s_collateralDeposited;
 contract DSCEngine {
     ///////////////////
     //   Functions   //
@@ -53,8 +63,13 @@ contract DSCEngine {
     //   External Functions  //
     ///////////////////////////
     function depositCollateralAndMintDsc() external {}
-
-    function depositCollateral() external {}
+/*
+ * @param tokenCollateralAddress: The ERC20 token address of the collateral you're depositing
+ * @param amountCollateral: The amount of collateral you're depositing
+ */
+    function depositCollateral(address tokenCollateralAddress, uint256 amountCollateral) external moreThanZero(amountCollateral) isAllowedToken(tokenCollateralAddress) nonReentrant{
+    s_collateralDeposited[msg.sender][tokenCollateralAddress] += amountCollateral;
+}
 
     function redeemCollateralForDsc() external {}
 
