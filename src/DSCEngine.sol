@@ -60,6 +60,8 @@ contract DSCEngine {
     ///////////////////
 
     error DSCEngine__NeedsMoreThanZero();
+    error DSCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength();
+
 
     ///////////////////
     //   Modifiers   //
@@ -78,6 +80,17 @@ contract DSCEngine {
     ///////////////////////////
     //   External Functions  //
     ///////////////////////////
+    constructor(address[] memory tokenAddresses, address[] memory priceFeedAddresses, address dscAddress){
+    if(tokenAddresses.length != priceFeedAddresses.length){
+        revert DSCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength();
+    }
+
+    for(uint256 i=0; i < tokenAddresses.length; i++){
+        s_priceFeeds[tokenAddresses[i]] = priceFeedAddresses[i];
+    }
+    
+
+}
     function depositCollateralAndMintDsc() external {}
 /*
  * @param tokenCollateralAddress: The ERC20 token address of the collateral you're depositing
