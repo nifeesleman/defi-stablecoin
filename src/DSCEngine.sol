@@ -55,6 +55,22 @@ mapping(address token => address priceFeed) private s_priceFeeds;
 DecentralizedStableCoin private immutable i_dsc;
 mapping(address user => mapping(address token => uint256 amount)) private s_collateralDeposited;
 contract DSCEngine {
+     ///////////////////
+    //     Errors    //
+    ///////////////////
+
+    error DSCEngine__NeedsMoreThanZero();
+
+    ///////////////////
+    //   Modifiers   //
+    ///////////////////
+
+    modifier moreThanZero(uint256 amount){
+        if(amount <=0){
+            revert DSCEngine__NeedsMoreThanZero();
+        }
+        _;
+    }
     ///////////////////
     //   Functions   //
     ///////////////////
