@@ -60,13 +60,12 @@ contract DecentralizedStableCoin is ERC20Burnable {
         address _to,
         uint256 _amount
     ) external overrides onlyOwner returns (bool) {
-         if(_to == address(0)){
+        if (_to == address(0)) {
             revert DecentralizedStableCoin__NotZeroAddress();
         }
-        if(_amount <= 0){
+        if (_amount <= 0) {
             revert DecentralizedStableCoin__MustBeMoreThanZero();
         }
-        _mint(_to, amount)
-        return true;
+        _mint(_to, amount);
     }
 }
