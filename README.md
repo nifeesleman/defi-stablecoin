@@ -2,6 +2,7 @@
    1. Chainlink price feed
    2. Set a function to exchange ETH & BTC -> $$$
 2. Stability Machanism (Minting): Algorithmic (Decentralized)
+   1. People onle can mint the stable coin with enough
 3. Collateral: Exogenous (Crypto) 
-   1. ETH
-   2. BTC
+   1. wETH
+   2. wBTC
