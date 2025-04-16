@@ -17,7 +17,7 @@
 // constructor
 // receive function (if exists)
 // fallback function (if exists)
-// external
+// external*
 // public
 // internal
 // private
