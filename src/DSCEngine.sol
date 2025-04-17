@@ -25,7 +25,7 @@
 
 pragma solidity ^0.8.18;
 
-import {DecentralizedStableCoin} from "DecentralizedStableCoin.sol";
+import {DecentralizedStableCoin} from "src/DecentralizedStableCoin.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /*
@@ -47,15 +47,8 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
  * for minting and redeeming DSC, as well as depositing and withdrawing collateral.
  * @notice This contract is based on the MakerDAO DSS system
  */
-/////////////////////////
-//   State Variables   //
-/////////////////////////
 
-mapping(address token => address priceFeed) private s_priceFeeds;
-DecentralizedStableCoin private immutable i_dsc;
-mapping(address user => mapping(address token => uint256 amount)) private s_collateralDeposited;
-
-contract DSCEngine {
+contract DSCEngine is ReentrancyGuard {
     ///////////////////
     //     Errors    //
     ///////////////////
@@ -64,9 +57,18 @@ contract DSCEngine {
     error DSCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength();
     error DSCEngine__TokenNotAllowed();
 
+    /////////////////////////
+    //   State Variables   //
+    /////////////////////////
+
+    mapping(address token => address priceFeed) private s_priceFeeds;
+    DecentralizedStableCoin private immutable i_dsc;
+    mapping(address user => mapping(address token => uint256 amount)) private s_collateralDeposited;
+
     ///////////////////
-    //   Modifiers   //
+    //   Events      //
     ///////////////////
+    event CollateralDeposited(address indexed user, address indexed token, uint256 indexed amount);
 
     modifier moreThanZero(uint256 amount) {
         if (amount <= 0) {
@@ -77,10 +79,11 @@ contract DSCEngine {
 
     modifier isAllowedToken(address token) {
         if (s_priceFeeds[token] == address(0)) {
-            revert DSCEngine__TokenNotAllowed(token);
+            revert DSCEngine__TokenNotAllowed();
         }
         _;
     }
+
     ///////////////////
     //   Functions   //
     ///////////////////
@@ -99,10 +102,11 @@ contract DSCEngine {
     }
 
     function depositCollateralAndMintDsc() external {}
+
     /*
-    * @param tokenCollateralAddress: The ERC20 token address of the collateral you're depositing
-    * @param amountCollateral: The amount of collateral you're depositing
-    */
+     * @param tokenCollateralAddress: The ERC20 token address of the collateral you're depositing
+     * @param amountCollateral: The amount of collateral you're depositing
+     */
 
     function depositCollateral(address tokenCollateralAddress, uint256 amountCollateral)
         external
@@ -111,6 +115,7 @@ contract DSCEngine {
         nonReentrant
     {
         s_collateralDeposited[msg.sender][tokenCollateralAddress] += amountCollateral;
+        emit CollateralDeposited(msg.sender, tokenCollateralAddress, amountCollateral);
     }
 
     function redeemCollateralForDsc() external {}
