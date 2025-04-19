@@ -168,4 +168,10 @@ contract DSCEngine is ReentrancyGuard {
     }
 
     function _revertIgHealthFactorIsBroken(address user) internal view {}
+
+    //////////////////////////////////////////
+    //   Public & External View Functions   //
+    //////////////////////////////////////////
+
+    function getAccountCollateralValue(address user) public pure {}
 }
