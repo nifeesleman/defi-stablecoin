@@ -136,6 +136,8 @@ contract DSCEngine is ReentrancyGuard {
     */
     function mintDsc(uint256 amountDscToMint) public moreThanZero(amountDscToMint) nonReentrant {
         s_DSCMinted[msg.sender] += amountDscToMint;
+
+        revertIgHealthFactorIsBroken(msg.sender);
     }
 
     function burnDsc() external {}
@@ -143,4 +145,27 @@ contract DSCEngine is ReentrancyGuard {
     function liquidate() external {}
 
     function getHealthFactor() external view {}
+
+    ///////////////////////////////////////////
+    //   Private & Internal View Functions   //
+    ///////////////////////////////////////////
+
+    function _getAccountInformation(address user)
+        private
+        view
+        returns (uint256 totalDscMinted, uint256 collateralValueInUsd)
+    {
+        totalDscMinted = s_DSCMinted[user];
+        collateralValueInUsd = getAccountCollateralValue(user);
+    }
+    /*
+    * Returns how close to liquidation a user is
+    * If a user goes below 1, then they can be liquidated.
+    */
+
+    function _healthFactor(address user) private view returns (uint256) {
+        (uint256 totalDscMinted, uint256 collateralValueInUsd) = _getAccountInformation(user);
+    }
+
+    function _revertIgHealthFactorIsBroken(address user) internal view {}
 }
