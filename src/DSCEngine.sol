@@ -28,8 +28,9 @@ pragma solidity ^0.8.18;
 import {DecentralizedStableCoin} from "src/DecentralizedStableCoin.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
+import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 /*
+
  * @title DSCEngine
  * @author Nife Esleman
  *
@@ -58,6 +59,7 @@ contract DSCEngine is ReentrancyGuard {
     error DSCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength();
     error DSCEngine__TokenNotAllowed();
     error DSCEngine__TransferFailed();
+    error DSCEngine__BreakHealthFactor(uint256 healthFactor);
 
     /////////////////////////
     //   State Variables   //
@@ -66,12 +68,13 @@ contract DSCEngine is ReentrancyGuard {
     mapping(address token => address priceFeed) private s_priceFeeds;
     mapping(address user => mapping(address token => uint256 amount)) private s_collateralDeposited;
     mapping(address user => uint256 amountDscMinted) private s_DSCMinted;
+    address[] private s_collateralTokens;
 
     uint256 private constant ADDITIONAL_FEED_PRECISION = 1e10;
     uint256 private constant PRECISION = 1e18;
     uint256 private constant LIQUIDATION_THRESHOLD = 50;
     uint256 private constant LIQUIDATION_PRECISION = 100;
-
+    uint256 private constant MIN_HEALTH_FACTOR = 1;
     address weth;
     address wbtc;
 
@@ -146,7 +149,7 @@ contract DSCEngine is ReentrancyGuard {
     function mintDsc(uint256 amountDscToMint) public moreThanZero(amountDscToMint) nonReentrant {
         s_DSCMinted[msg.sender] += amountDscToMint;
 
-        revertIgHealthFactorIsBroken(msg.sender);
+        _revertIgHealthFactorIsBroken(msg.sender);
     }
 
     function burnDsc() external {}
@@ -174,13 +177,30 @@ contract DSCEngine is ReentrancyGuard {
 
     function _healthFactor(address user) private view returns (uint256) {
         (uint256 totalDscMinted, uint256 collateralValueInUsd) = _getAccountInformation(user);
+        uint256 coolateralAdjustedForThreshold = (collateralValueInUsd * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION;
+
+        return (coolateralAdjustedForThreshold * PRECISION) / totalDscMinted;
     }
 
-    function _revertIgHealthFactorIsBroken(address user) internal view {}
+    function _revertIgHealthFactorIsBroken(address user) internal view {
+        uint256 userHealthFactor = _healthFactor(user);
+        if (userHealthFactor < MIN_HEALTH_FACTOR) {
+            revert DSCEngine__BreakHealthFactor(userHealthFactor);
+        }
+    }
 
     //////////////////////////////////////////
     //   Public & External View Functions   //
     //////////////////////////////////////////
 
-    function getAccountCollateralValue(address user) public pure {}
+    function getAccountCollateralValue(address user) public view returns (uint256 totalCollateralValueInUsd) {
+        for (uint256 i = 0; i < s_collateralTokens.length; i++) {
+            address token = s_collateralTokens[i];
+            uint256 amount = s_collateralDeposited[user][token];
+            totalCollateralValueInUsd += (getTokenValueInUSD(token, amount));
+        }
+        return totalCollateralValueInUsd;
+    }
+
+    function getUsdValue(address token, uint256 amount) public view returns (uint256) {}
 }
