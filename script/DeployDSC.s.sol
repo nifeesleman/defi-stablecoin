@@ -5,6 +5,7 @@ pragma solidity ^0.8.18;
 import {DecentralizedStableCoin} from "src/DecentralizedStableCoin.sol";
 import {DSCEngine} from "src/DSCEngine.sol";
 import {Script} from "forge-std/Script.sol";
+import {HelperConfig} from "script/HelperConfig.s.sol";
 
 contract DeployDSC is Script {
     function run() external returns (DecentralizedStableCoin, DSCEngine) {
