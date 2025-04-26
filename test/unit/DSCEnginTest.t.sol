@@ -15,6 +15,7 @@ contract DSCEngineTest is Test {
     HelperConfig helperConfig;
     address ethUsdPriceFeed;
     address weth;
+    // For deployment setup
 
     function setUp() public {
         deployer = new DeployDSC();
