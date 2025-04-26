@@ -22,6 +22,7 @@ contract DSCEngineTest is Test {
         (dsc, dsce) = deployer.run();
         (ethUsdPriceFeed,, weth,,) = helperConfig.activeNetworkConfig();
     }
+    // to test the minting of DSC
 
     function testGetUsdValue() public view {
         uint256 ethAmount = 1e18;
