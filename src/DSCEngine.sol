@@ -107,7 +107,7 @@ contract DSCEngine is ReentrancyGuard {
     ///////////////////////////
     //   External Functions  //
     ///////////////////////////
-    constructor(address[] memory tokenAddresses, address[] memory priceFeedAddresses) {
+    constructor(address[] memory tokenAddresses, address[] memory priceFeedAddresses, address /*dscAddress*/ ) {
         if (tokenAddresses.length != priceFeedAddresses.length) {
             revert DSCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength();
         }
@@ -144,6 +144,7 @@ contract DSCEngine is ReentrancyGuard {
     function redeemCollateral() external {}
 
     /*
+    * @notice follow CEI-20 standard
     * @param amountDscToMint: The amount of DSC you want to mint
     * You can only mint DSC if you hav enough collateral
     */
