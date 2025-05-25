@@ -29,8 +29,7 @@ import {DecentralizedStableCoin} from "src/DecentralizedStableCoin.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
-/*
-
+/**
  * @title DSCEngine
  * @author Nife Esleman
  *
@@ -85,6 +84,7 @@ contract DSCEngine is ReentrancyGuard {
     ///////////////////
 
     event CollateralDeposited(address indexed user, address indexed token, uint256 indexed amount);
+    event CollateralRedeem(address indexed user, uint256 indexed amount, address indexed token);
 
     modifier moreThanZero(uint256 amount) {
         if (amount <= 0) {
@@ -116,7 +116,7 @@ contract DSCEngine is ReentrancyGuard {
             s_priceFeeds[tokenAddresses[i]] = priceFeedAddresses[i];
         }
     }
-    /*
+    /**
      * @notice This function deposits collateral and mints DSC in one transaction.
      * @param tokenCollateralAddress: The ERC20 token address of the collateral you're depositing
      * @param amountCollateral: The amount of collateral you're depositing
@@ -133,11 +133,10 @@ contract DSCEngine is ReentrancyGuard {
         _revertIgHealthFactorIsBroken(msg.sender);
     }
 
-    /*
+    /**
      * @param tokenCollateralAddress: The ERC20 token address of the collateral you're depositing
      * @param amountCollateral: The amount of collateral you're depositing
      */
-
     function depositCollateral(address tokenCollateralAddress, uint256 amountCollateral)
         public
         moreThanZero(amountCollateral)
@@ -152,10 +151,39 @@ contract DSCEngine is ReentrancyGuard {
             revert DSCEngine__TransferFailed();
         }
     }
+    /**
+     * @notice Redeems collateral in exchange for burning DSC.
+     * @param tokenCollateralAddress The ERC20 token address of the collateral to redeem.
+     * @param amountCollateral The amount of collateral to redeem.
+     * @param amountDscToBurn The amount of DSC to burn.
+     * @dev This function allows users to redeem their collateral by burning DSC in a single transaction.
+     */
 
-    function redeemCollateralForDsc() external {}
+    function redeemCollateralForDsc(address tokenCollateralAddress, uint256 amountCollateral, uint256 amountDscToBurn)
+        external
+    {
+        burnDsc(amountDscToBurn);
+        redeemCollateral(tokenCollateralAddress, amountCollateral);
+    }
 
-    function redeemCollateral() external {}
+    // In order to redeem collateral
+    // 1. You must have minted DSC
+    // 2. Health factor must be above 1 after redeeming collateral
+    // CEI Check-Effects-Interactions
+    function redeemCollateral(address tokenCollateralAddress, uint256 amountCollateral)
+        public
+        moreThanZero(amountCollateral)
+        nonReentrant
+    {
+        s_collateralDeposited[msg.sender][tokenCollateralAddress] -= amountCollateral;
+        emit CollateralRedeem(msg.sender, amountCollateral, tokenCollateralAddress);
+        // _Calculate the health factor before transferring the collateral
+        bool success = IERC20(tokenCollateralAddress).transfer(msg.sender, amountCollateral);
+        if (!success) {
+            revert DSCEngine__TransferFailed();
+        }
+        _revertIgHealthFactorIsBroken(msg.sender);
+    }
 
     /*
     * @notice follow CEI-20 standard
@@ -172,7 +200,15 @@ contract DSCEngine is ReentrancyGuard {
         }
     }
 
-    function burnDsc() external {}
+    function burnDsc(uint256 amount) public moreThanZero(amount) {
+        s_DSCMinted[msg.sender] -= amount;
+        bool success = i_dsc.transferFrom(msg.sender, address(this), amount);
+        if (!success) {
+            revert DSCEngine__TransferFailed();
+        }
+        i_dsc.burn(amount);
+        _revertIgHealthFactorIsBroken(msg.sender); // Revert if health factor is broken after burning, But i dont think it can be broken after burning
+    }
 
     function liquidate() external {}
 
