@@ -46,6 +46,13 @@ contract DSCEngineTest is Test {
         new DSCEngine(tokensAddresses, priceFeedAddresses, address(dsc));
     }
 
+    function testGetTokenAmountFromUsd() public view {
+        uint256 usdAmount = 100 ether;
+        uint256 expectedTokenAmount = 0.1 ether;
+        uint256 actualTokenAmount = dsce.getTokenAmountFromUsd(weth, usdAmount);
+        assertEq(actualTokenAmount, expectedTokenAmount, "Token amount calculation is incorrect");
+    }
+
     // to test the minting of DSC
 
     function testGetUsdValue() public view {
@@ -55,11 +62,19 @@ contract DSCEngineTest is Test {
         assertEq(actualUsd, expectedUsd, "USD value calculation is incorrect");
     }
 
-    function testRrverseCollateralIsZero() public {
+    function testReverseCollateralIsZero() public {
         vm.startPrank(USER);
         ERC20Mock(weth).approve(address(dsce), AMOUNT_COLLATERAL);
         vm.expectRevert(DSCEngine__NeedsMoreThanZero.selector);
         dsce.depositCollateral(weth, 0);
+        vm.stopPrank();
+    }
+
+    function testRevertsWithUnapprovedCollateral() public {
+        ERC20Mock ranToken = new ERC20Mock("RAN", "RAN", USER, AMOUNT_COLLATERAL);
+        vm.startPrank(USER);
+        vm.expectRevert(DSCEngine.DSCEngine__TokenNotAllowed.selector);
+        dsce.depositCollateral(address(ranToken), AMOUNT_COLLATERAL);
         vm.stopPrank();
     }
 }

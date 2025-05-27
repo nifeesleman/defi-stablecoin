@@ -29,6 +29,8 @@ import {DecentralizedStableCoin} from "src/DecentralizedStableCoin.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+import "forge-std/console.sol";
+
 /**
  * @title DSCEngine
  * @author Nife Esleman
@@ -48,7 +50,6 @@ import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/Ag
  * for minting and redeeming DSC, as well as depositing and withdrawing collateral.
  * @notice This contract is based on the MakerDAO DSS system
  */
-
 contract DSCEngine is ReentrancyGuard {
     ///////////////////
     //     Errors    //
@@ -322,6 +323,7 @@ contract DSCEngine is ReentrancyGuard {
         AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeeds[token]);
         (, int256 price,,,) = priceFeed.latestRoundData();
 
-        return ((uint256(price) * ADDITIONAL_FEED_PRECISION) * amount) / PRECISION;
+        console.logInt(price); // Uncomment and move above return if you want to debug
+        return (uint256(price)) * amount * ADDITIONAL_FEED_PRECISION / PRECISION;
     }
 }
