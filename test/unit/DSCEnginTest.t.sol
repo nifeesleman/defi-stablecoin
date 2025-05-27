@@ -18,6 +18,7 @@ contract DSCEngineTest is Test {
     HelperConfig helperConfig;
     address ethUsdPriceFeed;
     address weth;
+    address btcUsdPriceFeed;
 
     address public USER = makeAddr("user");
     uint256 public constant AMOUNT_COLLATERAL = 10 ether;
@@ -28,15 +29,28 @@ contract DSCEngineTest is Test {
         deployer = new DeployDSC();
         // Ensure we're using the test runner's address
         (dsc, dsce, helperConfig) = deployer.run();
-        (ethUsdPriceFeed,, weth,,) = helperConfig.activeNetworkConfig();
+        (ethUsdPriceFeed, btcUsdPriceFeed, weth,,) = helperConfig.activeNetworkConfig();
 
         ERC20Mock(weth).mint(USER, STARTING_ERC20_BALANCE);
     }
+
+    address[] public tokensAddresses;
+    address[] public priceFeedAddresses;
+
+    // Contructor Tests
+    function testRevertIfTokenLengthDoesntMatchPriceFeeds() public {
+        tokensAddresses.push(weth);
+        priceFeedAddresses.push(ethUsdPriceFeed);
+        priceFeedAddresses.push(btcUsdPriceFeed);
+        vm.expectRevert(DSCEngine.DSCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength.selector);
+        new DSCEngine(tokensAddresses, priceFeedAddresses, address(dsc));
+    }
+
     // to test the minting of DSC
 
     function testGetUsdValue() public view {
         uint256 ethAmount = 1e18;
-        uint256 expectedUsd = 10729926317773e10;
+        uint256 expectedUsd = 1000e18;
         uint256 actualUsd = dsce.getUsdValue(weth, ethAmount);
         assertEq(actualUsd, expectedUsd, "USD value calculation is incorrect");
     }
