@@ -239,7 +239,19 @@ contract DSCEngine is ReentrancyGuard {
         _revertIgHealthFactorIsBroken(msg.sender);
     }
 
-    function getHealthFactor() external view {}
+    // function getHealthFactor() external view {}
+
+    function getHealthFactor(address user) external view returns (uint256) {
+        (uint256 totalDscMinted, uint256 collateralValueInUsd) = _getAccountInformation(user);
+        uint256 collateralAdjustedForThreshold = (collateralValueInUsd * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION;
+
+        // If no DSC minted, return max value to avoid division by zero
+        if (totalDscMinted == 0) {
+            return type(uint256).max;
+        }
+
+        return (collateralAdjustedForThreshold * PRECISION) / totalDscMinted;
+    }
 
     ///////////////////////////////////////////
     //   Private & Internal View Functions   //
@@ -325,5 +337,13 @@ contract DSCEngine is ReentrancyGuard {
 
         console.logInt(price); // Uncomment and move above return if you want to debug
         return (uint256(price)) * amount * ADDITIONAL_FEED_PRECISION / PRECISION;
+    }
+
+    function getAccountInformation(address user)
+        external
+        view
+        returns (uint256 totalDscMinted, uint256 collateralValueInUsd)
+    {
+        (totalDscMinted, collateralValueInUsd) = _getAccountInformation(user);
     }
 }

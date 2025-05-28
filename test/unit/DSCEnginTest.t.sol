@@ -48,7 +48,7 @@ contract DSCEngineTest is Test {
 
     function testGetTokenAmountFromUsd() public view {
         uint256 usdAmount = 100 ether;
-        uint256 expectedTokenAmount = 0.1 ether;
+        uint256 expectedTokenAmount = 0.05 ether;
         uint256 actualTokenAmount = dsce.getTokenAmountFromUsd(weth, usdAmount);
         assertEq(actualTokenAmount, expectedTokenAmount, "Token amount calculation is incorrect");
     }
@@ -57,7 +57,7 @@ contract DSCEngineTest is Test {
 
     function testGetUsdValue() public view {
         uint256 ethAmount = 1e18;
-        uint256 expectedUsd = 1000e18;
+        uint256 expectedUsd = 2000e18;
         uint256 actualUsd = dsce.getUsdValue(weth, ethAmount);
         assertEq(actualUsd, expectedUsd, "USD value calculation is incorrect");
     }
@@ -76,5 +76,27 @@ contract DSCEngineTest is Test {
         vm.expectRevert(DSCEngine.DSCEngine__TokenNotAllowed.selector);
         dsce.depositCollateral(address(ranToken), AMOUNT_COLLATERAL);
         vm.stopPrank();
+    }
+
+    modifier depositeCollateral() {
+        vm.startPrank(USER);
+        ERC20Mock(weth).approve(address(dsce), AMOUNT_COLLATERAL);
+        dsce.depositCollateral(weth, AMOUNT_COLLATERAL);
+        vm.stopPrank();
+        _;
+    }
+
+    function testCanDepositCollateralAndGetAccountInfo() public depositeCollateral {
+        (uint256 totalDscMinted, uint256 collateralValueInUsd) = dsce.getAccountInformation(USER);
+        uint256 expectedTotalDscMinted = 0;
+        uint256 expectedCollateralValueInUsd = dsce.getTokenAmountFromUsd(weth, collateralValueInUsd);
+        assertEq(totalDscMinted, expectedTotalDscMinted, "Total DSC minted should be zero");
+        assertEq(collateralValueInUsd, expectedCollateralValueInUsd, "Collateral value in USD should match");
+    }
+
+    function testGetAccountCollateralValue() public depositeCollateral {
+        uint256 expectedUsdValue = dsce.getUsdValue(weth, 0);
+        uint256 actualUsdValue = dsce.getAccountCollateralValue(USER);
+        assertEq(actualUsdValue, expectedUsdValue, "Collateral USD value mismatch");
     }
 }
