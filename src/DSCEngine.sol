@@ -59,7 +59,7 @@ contract DSCEngine is ReentrancyGuard {
     error DSCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength();
     error DSCEngine__TokenNotAllowed();
     error DSCEngine__TransferFailed();
-    error DSCEngine__BreakHealthFactor(uint256 healthFactor);
+    error DSCEngine__BreakHealthFactor(uint256 userHealthFactor);
     error DSCEngine__MintFailed();
     error DSCEngine__HealthFactorOk();
     error DSCEngine__HealthFactorNotImproved();
@@ -107,10 +107,6 @@ contract DSCEngine is ReentrancyGuard {
     ///////////////////
     //   Functions   //
     ///////////////////
-
-    ///////////////////////////
-    //   External Functions  //
-    ///////////////////////////
     constructor(address[] memory tokenAddresses, address[] memory priceFeedAddresses, address dscAddress) {
         if (tokenAddresses.length != priceFeedAddresses.length) {
             revert DSCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength();
@@ -122,13 +118,16 @@ contract DSCEngine is ReentrancyGuard {
 
         i_dsc = DecentralizedStableCoin(dscAddress);
     }
+
+    ///////////////////////////
+    //   External Functions  //
+    ///////////////////////////
     /**
      * @notice This function deposits collateral and mints DSC in one transaction.
      * @param tokenCollateralAddress: The ERC20 token address of the collateral you're depositing
      * @param amountCollateral: The amount of collateral you're depositing
      * @param amountDscToMint: The amount of DSC you want to mint
      */
-
     function depositCollateralAndMintDsc(
         address tokenCollateralAddress,
         uint256 amountCollateral,
@@ -139,10 +138,28 @@ contract DSCEngine is ReentrancyGuard {
         // _revertIgHealthFactorIsBroken(msg.sender);
     }
 
+    function redeemCollateralForDsc(address tokenCollateralAddress, uint256 amountCollateral, uint256 amountDscToBurn)
+        external
+    {
+        _burnDsc(amountDscToBurn, msg.sender, msg.sender);
+        _redeemCollateral(msg.sender, msg.sender, amountCollateral, tokenCollateralAddress);
+        _revertIgHealthFactorIsBroken(msg.sender);
+    }
     /**
      * @param tokenCollateralAddress: The ERC20 token address of the collateral you're depositing
      * @param amountCollateral: The amount of collateral you're depositing
      */
+
+    function redeemCollateral(address tokenCollateralAddress, uint256 amountCollateral)
+        public
+        moreThanZero(amountCollateral)
+        nonReentrant
+    {
+        _redeemCollateral(msg.sender, msg.sender, amountCollateral, tokenCollateralAddress);
+        _revertIgHealthFactorIsBroken(msg.sender);
+        _burnDsc(amountCollateral, msg.sender, msg.sender);
+    }
+
     function depositCollateral(address tokenCollateralAddress, uint256 amountCollateral)
         public
         moreThanZero(amountCollateral)
@@ -161,30 +178,13 @@ contract DSCEngine is ReentrancyGuard {
      * @notice Redeems collateral in exchange for burning DSC.
      * @param tokenCollateralAddress The ERC20 token address of the collateral to redeem.
      * @param amountCollateral The amount of collateral to redeem.
-     * @param amountDscToBurn The amount of DSC to burn.
      * @dev This function allows users to redeem their collateral by burning DSC in a single transaction.
      */
-
-    function redeemCollateralForDsc(address tokenCollateralAddress, uint256 amountCollateral, uint256 amountDscToBurn)
-        external
-    {
-        burnDsc(amountDscToBurn);
-        redeemCollateral(tokenCollateralAddress, amountCollateral);
-    }
 
     // In order to redeem collateral
     // 1. You must have minted DSC
     // 2. Health factor must be above 1 after redeeming collateral
     // CEI Check-Effects-Interactions
-    function redeemCollateral(address tokenCollateralAddress, uint256 amountCollateral)
-        public
-        moreThanZero(amountCollateral)
-        nonReentrant
-    {
-        _redeemCollateral(msg.sender, msg.sender, amountCollateral, tokenCollateralAddress);
-        _revertIgHealthFactorIsBroken(msg.sender);
-        // _burnDsc(amountCollateral, user, msg.sender);
-    }
 
     /**
      * @notice follow CEI-20 standard
@@ -302,7 +302,6 @@ contract DSCEngine is ReentrancyGuard {
 
     function _revertIgHealthFactorIsBroken(address user) internal view {
         uint256 userHealthFactor = _healthFactor(user);
-
         if (userHealthFactor < MIN_HEALTH_FACTOR) {
             revert DSCEngine__BreakHealthFactor(userHealthFactor);
         }
@@ -343,7 +342,7 @@ contract DSCEngine is ReentrancyGuard {
         AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeeds[token]);
         (, int256 price,,,) = priceFeed.latestRoundData();
 
-        console.logInt(price); // Uncomment and move above return if you want to debug
+        console.logInt(price);
         return (uint256(price)) * amount * ADDITIONAL_FEED_PRECISION / PRECISION;
     }
 
@@ -389,9 +388,5 @@ contract DSCEngine is ReentrancyGuard {
 
     function getCollateralTokenPriceFeed(address token) external view returns (address) {
         return s_priceFeeds[token];
-    }
-
-    function getHealthFactor(address user) external view returns (uint256) {
-        return _healthFactor(user);
     }
 }
