@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.18;
+pragma solidity ^0.8.18;
 
 import {Test} from "forge-std/Test.sol";
 import {StdInvariant} from "forge-std/StdInvariant.sol";
@@ -15,9 +15,24 @@ contract InvariantsTest is StdInvariant, Test {
     DSCEngine dsce;
     DecentralizedStableCoin dsc;
     HelperConfig config;
+    address weth;
+    address wbtc;
 
     function setUp() external {
         deployer = new DeployDSC();
         (dsc, dsce, config) = deployer.run();
+        (,, weth, wbtc,) = config.activeNetworkConfig();
+        targetContract(address(dsce));
+    }
+
+    function invariant_protocolMustHaveMoreValueThanTotalSupply() public view {
+        uint256 totalSupply = dsc.totalSupply();
+        uint256 totalWethDeposited = IERC20(weth).balanceOf(address(dsce));
+        uint256 totalWbtcDeposited = IERC20(wbtc).balanceOf(address(dsce));
+
+        uint256 wethValue = dsce.getUsdValue(weth, totalWethDeposited);
+        uint256 wbtcValue = dsce.getUsdValue(wbtc, totalWbtcDeposited);
+
+        assert(wethValue + wbtcValue >= totalSupply);
     }
 }
