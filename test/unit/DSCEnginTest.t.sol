@@ -10,7 +10,6 @@ import {HelperConfig} from "script/HelperConfig.s.sol";
 import {ERC20Mock} from "test/mocks/ERC20Mock.sol";
 import {MockV3Aggregator} from "test/mocks/MockV3Aggregator.sol";
 import {MockFailedMintDSC} from "test/mocks/MockFailedMintDSC.sol";
-import {console} from "forge-std/console.sol";
 import {MockFailedTransferFrom} from "test/mocks/MockFailedTransferFrom.sol";
 import {MockFailedTransfer} from "test/mocks/MockFailedTransfer.sol";
 
@@ -212,6 +211,8 @@ contract DSCEngineTest is Test {
         // 0xe580cc6100000000000000000000000000000000000000000000000006f05b59d3b20000
         // 0xe580cc6100000000000000000000000000000000000000000000003635c9adc5dea00000
         (, int256 price,,,) = MockV3Aggregator(ethUsdPriceFeed).latestRoundData();
+        // Chainlink prices are positive and fit in uint256 for these tests
+        // forge-lint: disable-next-line(unsafe-typecast)
         amountToMint = (amountCollateral * (uint256(price) * dsce.getAdditionalFeedPrecision())) / dsce.getPrecision();
 
         vm.startPrank(user);
