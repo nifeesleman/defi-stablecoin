@@ -18,7 +18,7 @@ contract HelperConfig is Script {
     uint8 public constant DECIMALS = 8;
     int256 public constant ETH_USD_PRICE = 2000e8;
     int256 public constant BTC_USD_PRICE = 1000e8;
-    uint256 public DEFAULT_ANVIL_KEY = 0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a;
+    uint256 public defaultAnvilKey = 0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a;
 
     NetworkConfig public activeNetworkConfig;
 
@@ -58,7 +58,7 @@ contract HelperConfig is Script {
             wethUsdPriceFeed: address(ethUsdPriceFeed),
             wetc: address(wethMock),
             wbtc: address(wbtcMock),
-            deployerKey: DEFAULT_ANVIL_KEY
+            deployerKey: defaultAnvilKey
         });
     }
 }
