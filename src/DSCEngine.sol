@@ -29,7 +29,6 @@ import {DecentralizedStableCoin} from "src/DecentralizedStableCoin.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
-import "forge-std/console.sol";
 import {OracleLib} from "./libraries/OracleLib.sol";
 
 /**
@@ -76,8 +75,6 @@ contract DSCEngine is ReentrancyGuard {
     uint256 private constant PRECISION = 1e18;
     uint256 private constant ADDITIONAL_FEED_PRECISION = 1e10;
     address[] private s_collateralTokens;
-    address weth;
-    address wbtc;
 
     DecentralizedStableCoin private immutable i_dsc;
 
@@ -161,7 +158,6 @@ contract DSCEngine is ReentrancyGuard {
     {
         _redeemCollateral(msg.sender, msg.sender, amountCollateral, tokenCollateralAddress);
         _revertIgHealthFactorIsBroken(msg.sender);
-        _burnDsc(amountCollateral, msg.sender, msg.sender);
     }
 
     function depositCollateral(address tokenCollateralAddress, uint256 amountCollateral)
@@ -345,8 +341,6 @@ contract DSCEngine is ReentrancyGuard {
     function getUsdValue(address token, uint256 amount) public view returns (uint256) {
         AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeeds[token]);
         (, int256 price,,,) = priceFeed.staleCheckLatestRoundData();
-
-        console.logInt(price);
         return (uint256(price)) * amount * ADDITIONAL_FEED_PRECISION / PRECISION;
     }
 
