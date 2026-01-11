@@ -17,7 +17,7 @@ contract Handler is Test {
     ERC20Mock wbtc;
     uint256 public timesMinteIsCalled;
     address[] usersWithCollateralDeposited;
-    uint256 MAX_DEPOSIT_SIZE = type(uint96).max;
+    uint256 maxDepositSize = type(uint96).max;
     MockV3Aggregator public ethUsdPriceFeed;
 
     constructor(DSCEngine _engine, DecentralizedStableCoin _dsc) {
@@ -38,17 +38,20 @@ contract Handler is Test {
     // }
     // Mint DSC Functions
 
-    function mintDSC(uint256 amount, uint256 addressSeed) public {
+    function mintDsc(uint256 amount, uint256 addressSeed) public {
         if (usersWithCollateralDeposited.length == 0) {
             return;
         }
         address sender = usersWithCollateralDeposited[addressSeed % usersWithCollateralDeposited.length];
 
         (uint256 totalDscMinted, uint256 collateralValueInUsd) = dsce.getAccountInformation(sender);
+        // casting to int256 is safe in tests because collateralValueInUsd and totalDscMinted stay well below 2^255
+        // forge-lint: disable-next-line(unsafe-typecast)
         int256 maxDscToMint = int256(collateralValueInUsd) / 2 - int256(totalDscMinted);
         if (maxDscToMint < 0) {
             return; // No need to mint if max is zero or negative
         }
+        // forge-lint: disable-next-line(unsafe-typecast)
         amount = uint256(bound(int256(amount), 0, maxDscToMint));
         if (amount == 0) {
             return; // No need to mint if amount is zero
@@ -62,7 +65,7 @@ contract Handler is Test {
 
     function depositCollateral(uint256 collateralSeed, uint256 amountCollateral) external {
         ERC20Mock collateral = _getCollateralFromSeed(collateralSeed);
-        amountCollateral = bound(amountCollateral, 1, MAX_DEPOSIT_SIZE);
+        amountCollateral = bound(amountCollateral, 1, maxDepositSize);
         vm.startPrank(msg.sender);
         collateral.mint(msg.sender, amountCollateral);
         collateral.approve(address(dsce), amountCollateral);
