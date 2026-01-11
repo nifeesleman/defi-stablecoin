@@ -17,7 +17,7 @@ contract DSCEngineTest is Test {
     error DSCEngine__NeedsMoreThanZero();
 
     event CollateralRedeemed(address indexed redeemFrom, address indexed redeemTo, address token, uint256 amount); // if
-        // redeemFrom != redeemedTo, then it was liquidated
+    // redeemFrom != redeemedTo, then it was liquidated
 
     DeployDSC deployer;
     DecentralizedStableCoin dsc;
@@ -349,7 +349,9 @@ contract DSCEngineTest is Test {
     function testLiquidationPayoutIsCorrect() public liquidated {
         uint256 liquidatorWethBalance = ERC20Mock(weth).balanceOf(liquidator);
         uint256 expectedWeth = dsce.getTokenAmountFromUsd(weth, amountToMint)
-            + (dsce.getTokenAmountFromUsd(weth, amountToMint) * dsce.getLiquidationBonus() / dsce.getLiquidationPrecision());
+            + (dsce.getTokenAmountFromUsd(weth, amountToMint)
+                * dsce.getLiquidationBonus()
+                / dsce.getLiquidationPrecision());
         uint256 hardCodedExpected = 6_111_111_111_111_111_110;
         assertEq(liquidatorWethBalance, hardCodedExpected);
         assertEq(liquidatorWethBalance, expectedWeth);
@@ -358,7 +360,9 @@ contract DSCEngineTest is Test {
     function testUserStillHasSomeEthAfterLiquidation() public liquidated {
         // Get how much WETH the user lost
         uint256 amountLiquidated = dsce.getTokenAmountFromUsd(weth, amountToMint)
-            + (dsce.getTokenAmountFromUsd(weth, amountToMint) * dsce.getLiquidationBonus() / dsce.getLiquidationPrecision());
+            + (dsce.getTokenAmountFromUsd(weth, amountToMint)
+                * dsce.getLiquidationBonus()
+                / dsce.getLiquidationPrecision());
 
         uint256 usdAmountLiquidated = dsce.getUsdValue(weth, amountLiquidated);
         uint256 expectedUserCollateralValueInUsd = dsce.getUsdValue(weth, amountCollateral) - (usdAmountLiquidated);

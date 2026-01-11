@@ -64,13 +64,7 @@ contract MockV3Aggregator {
         // latestRound is locally incremented and small in tests, so casting to uint80 is safe
         // forge-lint: disable-next-line(unsafe-typecast)
         uint80 castedRound = uint80(latestRound);
-        return (
-            castedRound,
-            getAnswer[latestRound],
-            getStartedAt[latestRound],
-            getTimestamp[latestRound],
-            castedRound
-        );
+        return (castedRound, getAnswer[latestRound], getStartedAt[latestRound], getTimestamp[latestRound], castedRound);
     }
 
     function description() external pure returns (string memory) {

@@ -170,6 +170,7 @@ contract DSCEngine is ReentrancyGuard {
             revert DSCEngine__TransferFailed();
         }
     }
+
     /**
      * @notice Redeems collateral in exchange for burning DSC.
      * @param tokenCollateralAddress The ERC20 token address of the collateral to redeem.
