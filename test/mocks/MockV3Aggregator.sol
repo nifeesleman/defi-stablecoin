@@ -10,7 +10,7 @@ pragma solidity ^0.8.0;
  * its answer is unimportant
  */
 contract MockV3Aggregator {
-    uint256 public constant version = 0;
+    uint256 public constant VERSION = 0;
 
     uint8 public decimals;
     int256 public latestAnswer;
@@ -44,6 +44,10 @@ contract MockV3Aggregator {
         getStartedAt[latestRound] = _startedAt;
     }
 
+    function version() external pure returns (uint256) {
+        return VERSION;
+    }
+
     function getRoundData(uint80 _roundId)
         external
         view
@@ -57,12 +61,15 @@ contract MockV3Aggregator {
         view
         returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)
     {
+        // latestRound is locally incremented and small in tests, so casting to uint80 is safe
+        // forge-lint: disable-next-line(unsafe-typecast)
+        uint80 castedRound = uint80(latestRound);
         return (
-            uint80(latestRound),
+            castedRound,
             getAnswer[latestRound],
             getStartedAt[latestRound],
             getTimestamp[latestRound],
-            uint80(latestRound)
+            castedRound
         );
     }
 
